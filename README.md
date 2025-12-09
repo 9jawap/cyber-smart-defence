@@ -74,9 +74,3 @@ Yes. You can manually upload the folder or use the **one-click installation** fr
 Yes. The plugin and the security engine are free. Professional installation and support are optional services.
 
 ---
-
-## Screenshots
-
-1. Dashboard status notice  
-2. One-click install button  
-3. Access Cyber Defence Panel button
