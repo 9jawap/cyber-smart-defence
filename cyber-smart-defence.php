@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Cyber Smart Defence
  * Plugin URI: https://cybersmartempire.com/cyberdefence/
- * Description: Free enterprise-grade website protection by Cyber Smart Empire. Users can install manually or request professional setup.
- * Version: 1.6
+ * Description: Free enterprise-grade website protection by Cyber Smart Empire. Users can install manually, via one-click, or request professional setup.
+ * Version: 1.8
  * Author: Cyber Smart Empire
  * Author URI: https://cybersmartempire.com
  * License: GPLv3
@@ -35,50 +35,47 @@ function csd_init_security_integration() {
 add_action('init', 'csd_init_security_integration', 1);
 
 // -----------------------------------------------------------------------------
-// INSTALL SECURITY ENGINE TO ROOT (USER CLICK) & REDIRECT TO INSTALLER
+// AJAX HANDLER: FETCH & EXTRACT SECURITY ZIP
 // -----------------------------------------------------------------------------
-function csd_install_security_engine() {
-
-    if (!current_user_can('manage_options')) return;
-    check_admin_referer('csd_install_engine');
-
-    $source = plugin_dir_path(__FILE__) . 'security/';
-    $destination = ABSPATH . 'security/';
-
-    if (!is_dir($source)) {
-        wp_die('Security engine package is missing inside the plugin.');
-    }
+add_action('wp_ajax_csd_fetch_security', 'csd_fetch_security');
+function csd_fetch_security() {
+    if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
 
     require_once ABSPATH . 'wp-admin/includes/file.php';
+    require_once ABSPATH . 'wp-admin/includes/misc.php';
+    require_once ABSPATH . 'wp-admin/includes/class-pclzip.php';
     WP_Filesystem();
-
     global $wp_filesystem;
 
-    if (!$wp_filesystem->is_dir($destination)) {
-        $wp_filesystem->mkdir($destination);
+    $zip_url = 'https://cybersmartempire.com/enviroment/security.zip';
+    $destination = ABSPATH . 'security/';
+
+    // Download remote zip
+    $tmp_file = download_url($zip_url);
+    if (is_wp_error($tmp_file)) wp_send_json_error('Failed to download package.');
+
+    // Ensure destination exists
+    if (!$wp_filesystem->is_dir($destination)) $wp_filesystem->mkdir($destination);
+
+    // Extract
+    $archive = new PclZip($tmp_file);
+    if ($archive->extract(PCLZIP_OPT_PATH, $destination) == 0) {
+        unlink($tmp_file);
+        wp_send_json_error('Failed to extract security package: ' . $archive->errorInfo(true));
     }
 
-    copy_dir($source, $destination);
+    // Cleanup temp file
+    unlink($tmp_file);
 
-    // Redirect user to the first-time installer
+    // Success
     $installer_url = site_url('/security/');
-    echo '<script>window.open("' . esc_url($installer_url) . '", "_blank");</script>';
-
-    // Redirect back to plugin page after a brief delay (optional)
-    echo '<meta http-equiv="refresh" content="0; url=' . esc_url(admin_url('admin.php?page=cyber-smart-defence&installed=1')) . '">';
-    exit;
+    wp_send_json_success(['installer_url' => $installer_url]);
 }
 
 // -----------------------------------------------------------------------------
 // ADMIN NOTICES
 // -----------------------------------------------------------------------------
 function csd_admin_notices() {
-    if (isset($_GET['installed'])) {
-        echo '<div class="notice notice-success is-dismissible">
-            <p><strong>✅ Cyber Smart Defence Engine Installed Successfully.</strong> Installer opened in a new tab.</p>
-        </div>';
-    }
-
     if (csd_security_system_ready()) {
         echo '<div class="notice notice-success is-dismissible">
                 <p><strong>🛡 Cyber Smart Defence is ACTIVE.</strong> Your website is now protected.</p>
@@ -86,7 +83,7 @@ function csd_admin_notices() {
     } else {
         echo '<div class="notice notice-warning">
                 <p><strong>⚠ Cyber Smart Defence engine not yet installed.</strong></p>
-                <p>You may install it automatically or request a professional setup.</p>
+                <p>You can install it automatically from the plugin page or request professional setup.</p>
               </div>';
     }
 }
@@ -109,14 +106,9 @@ function csd_add_admin_menu() {
 add_action('admin_menu', 'csd_add_admin_menu');
 
 // -----------------------------------------------------------------------------
-// ADMIN DASHBOARD PAGE
+// ADMIN PAGE
 // -----------------------------------------------------------------------------
 function csd_admin_page() {
-
-    if (isset($_POST['csd_install_engine'])) {
-        csd_install_security_engine();
-    }
-
     $is_ready = csd_security_system_ready();
     $status = $is_ready
         ? '<span style="color:green;font-weight:bold;">Active</span>'
@@ -137,22 +129,20 @@ function csd_admin_page() {
                     Open Cyber Defence Panel
                 </a>
             </div>
+        <?php else: ?>
+            <h2>One-Click Automatic Installation</h2>
+            <button id="csd_install_btn" class="button button-primary">Install Security Engine to Root & Run Installer</button>
+            <div id="csd_progress" style="margin-top:10px;width:100%;background:#eee;height:20px;display:none;">
+                <div style="width:0%;height:100%;background:#4caf50;" id="csd_progress_bar"></div>
+            </div>
+            <p id="csd_fallback" style="display:none;">
+                <a href="<?php echo esc_url($security_panel_url); ?>" target="_blank" class="button button-secondary">
+                    Install the Security Engine Manually
+                </a>
+            </p>
         <?php endif; ?>
 
         <hr>
-
-        <?php if (!$is_ready): ?>
-        <h2>One-Click Automatic Installation</h2>
-        <form method="post">
-            <?php wp_nonce_field('csd_install_engine'); ?>
-            <button type="submit" name="csd_install_engine" class="button button-primary">
-                Install Security Engine to Root & Run Installer
-            </button>
-        </form>
-        <?php endif; ?>
-
-        <hr>
-
         <h2>For Manual Installation</h2>
         <ol>
             <li>Copy the <strong>security</strong> folder to your site root.</li>
@@ -161,7 +151,6 @@ function csd_admin_page() {
         </ol>
 
         <hr>
-
         <h2>Professional Installation & Support (Optional)</h2>
         <ul>
             <li>Full secure setup</li>
@@ -170,7 +159,6 @@ function csd_admin_page() {
             <li>Emergency response</li>
             <li>Security monitoring</li>
         </ul>
-
         <p>
             <a href="https://cybersmartempire.com/cyberdefence" class="button button-primary" target="_blank">
                 Request Professional Setup
@@ -179,9 +167,42 @@ function csd_admin_page() {
                 Contact Support
             </a>
         </p>
-
         <hr>
         <p><a href="https://cybersmartempire.com" target="_blank">🌐 Visit Cyber Smart Empire</a></p>
     </div>
+
+    <script>
+    document.getElementById('csd_install_btn')?.addEventListener('click', function() {
+        var progress = document.getElementById('csd_progress');
+        var bar = document.getElementById('csd_progress_bar');
+        var fallback = document.getElementById('csd_fallback');
+        progress.style.display = 'block';
+        bar.style.width = '0%';
+
+        var interval = setInterval(function(){
+            var width = parseInt(bar.style.width);
+            if(width >= 90) clearInterval(interval);
+            bar.style.width = (width+10) + '%';
+        }, 500);
+
+        fetch(ajaxurl + '?action=csd_fetch_security&_wpnonce=<?php echo wp_create_nonce("csd_install_engine"); ?>', {method: 'POST'})
+        .then(res => res.json())
+        .then(data => {
+            clearInterval(interval);
+            bar.style.width = '100%';
+            if(data.success) {
+                window.open(data.data.installer_url, '_blank');
+                location.reload();
+            } else {
+                alert('Installation failed: ' + data.data);
+                fallback.style.display = 'block';
+            }
+        }).catch(err=>{
+            clearInterval(interval);
+            alert('Installation failed: '+err);
+            fallback.style.display = 'block';
+        });
+    });
+    </script>
     <?php
 }
