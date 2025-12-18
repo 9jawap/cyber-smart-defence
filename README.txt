@@ -1,57 +1,74 @@
 === Cyber Smart Defence ===
 Contributors: cybersmartempire
-Official Website: https://cybersmartempire.com/cyberdefence
-Tags: security, firewall, malware protection, brute-force protection, cyberdefence
+Tags: security, website protection, admin tools, monitoring
 Requires at least: 5.5
 Tested up to: 6.9
-Stable tag: 1.8
 Requires PHP: 7.2
+Stable tag: 2.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-Cyber Smart Defence connects your WordPress site to the external /security/ firewall engine for real-time protection.
+Adds a security management interface to WordPress and connects your site with the Cyber Smart Defence system.
 
 == Description ==
 
-Cyber Smart Defence is a lightweight connection bridge that links your WordPress website to the Cyber Smart Empire external firewall engine located in the `/security/` directory.
+Cyber Smart Defence is a WordPress plugin that provides an administrative interface for managing and monitoring your site’s security status.
 
-The plugin automatically:
+The plugin integrates seamlessly into the WordPress dashboard and allows administrators to:
+- View protection status
+- Enable protection using a guided setup
+- Access the Cyber Smart Defence control panel
+- Receive updates and announcements directly in the dashboard
 
-• Detects the firewall engine  
-• Activates protection  
-• Shows live status  
-• Provides access to the Cyber Defence Panel  
-• Offers one-click installation  
+The plugin is designed to work quietly in the background and does not modify WordPress core files.
 
-The firewall operates independently from WordPress, maintaining protection even if WordPress is compromised.
+== Features ==
 
-== Key Features ==
-
-• Auto-detects `/security/` folder  
-• Auto-activates firewall  
-• Live protection status  
-• One-click installation  
-• Zero performance impact  
-• Works on shared hosting, VPS, and dedicated servers  
-• Protects against brute-force, SQLi, malware payloads, bots, and endpoint abuse  
+* Simple security status indicator in the WordPress admin area
+* One-click guided setup option
+* Dashboard access to the Cyber Smart Defence panel
+* Admin notices when protection is active or inactive
+* News & updates widget in the WordPress dashboard
 
 == Installation ==
 
-1. Install and activate the plugin.  
-2. To auto-install the engine, go to the dashboard and click **"Install Security Engine to Root & Run Installer"**.  
-3. Manual method:  
-   - Upload the `security` directory to your website root (same level as wp-config.php).  
-   - Open `yourdomain.com/security/` to run the setup.  
-4. Refresh the dashboard to view live status.
+1. Upload or activate the Cyber Smart Defence plugin.
+2. Open Cyber Defence from the WordPress admin menu.
+3. Follow the on-screen instructions to enable protection.
+4. Once enabled, your protection status will be shown in the dashboard.
+
+No manual configuration is required.
 
 == Frequently Asked Questions ==
 
-= Do I need the /security/ folder? =
-Yes, the firewall engine is required.
+= Does this plugin modify WordPress core files? =  
+No. Cyber Smart Defence does not modify WordPress core, themes, or plugins.
 
-= Can I install manually? =
-Yes, manually upload the directory or use the one-click option.
+= Is this plugin beginner-friendly? =  
+Yes. The plugin provides a guided interface designed for non-technical users.
 
-= Is this free? =
-Yes, the plugin and engine are free; paid support is optional.
+= Does this plugin slow down my website? =  
+The plugin is lightweight and designed to have minimal impact on performance.
 
+= Is technical support available? =  
+Yes. Support resources and contact options are available directly from the plugin interface.
+
+== Screenshots ==
+
+1. Cyber Smart Defence dashboard overview
+2. Security status indicator
+3. One-click setup interface
+4. Dashboard news & updates widget
+
+== Changelog ==
+
+= 2.2 =
+* Added dashboard news & updates widget
+* Improved admin interface and status indicators
+* Updated compatibility with latest WordPress version
+* General stability improvements
+
+== Upgrade Notice ==
+
+= 2.2 =
+This update adds dashboard updates and improves compatibility with newer WordPress versions.
