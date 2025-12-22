@@ -1,56 +1,62 @@
 === Cyber Smart Defence ===
 Contributors: cybersmartempire
-Tags: security, website protection, admin tools, monitoring
+Tags: security, login protection, firewall, website protection
 Requires at least: 5.5
 Tested up to: 6.9
 Requires PHP: 7.2
-Stable tag: 2.2
+Stable tag: 3.1.2
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-Adds a security management interface to WordPress and connects your site with the Cyber Smart Defence system.
+Lightweight WordPress security firewall with login protection, threat monitoring, powered by Cyber Smart Empire.
 
 == Description ==
 
-Cyber Smart Defence is a WordPress plugin that provides an administrative interface for managing and monitoring your site’s security status.
+Cyber Smart Defence is a lightweight yet powerful WordPress security plugin designed to protect your website against unauthorized access and brute-force login attacks.
 
-The plugin integrates seamlessly into the WordPress dashboard and allows administrators to:
-- View protection status
-- Enable protection using a guided setup
-- Access the Cyber Smart Defence control panel
-- Receive updates and announcements directly in the dashboard
+The plugin integrates directly into the WordPress admin dashboard and works quietly in the background to monitor login activity, automatically block suspicious behavior, and display a professional lockdown screen when threats are detected.
 
-The plugin is designed to work quietly in the background and does not modify WordPress core files.
+When an attack occurs, Cyber Smart Defence temporarily restricts access:
+
+
+No complex configuration is required.
 
 == Features ==
 
-* Simple security status indicator in the WordPress admin area
-* One-click guided setup option
-* Dashboard access to the Cyber Smart Defence panel
+* Intelligent login attempt monitoring
+* Automatic temporary lockout after multiple failed login attempts
+* IP-based threat detection and response
+* Secure threat logging system
 * Admin notices when protection is active or inactive
-* News & updates widget in the WordPress dashboard
+* Lightweight and performance-friendly
 
 == Installation ==
 
 1. Upload or activate the Cyber Smart Defence plugin.
 2. Open Cyber Defence from the WordPress admin menu.
-3. Follow the on-screen instructions to enable protection.
-4. Once enabled, your protection status will be shown in the dashboard.
+3. Follow the guided on-screen setup to enable protection.
+4. Once enabled, your site is automatically monitored and protected.
 
 No manual configuration is required.
 
 == Frequently Asked Questions ==
 
-= Does this plugin modify WordPress core files? =  
-No. Cyber Smart Defence does not modify WordPress core, themes, or plugins.
+= Does this plugin modify WordPress core files? =
+No. Cyber Smart Defence does not modify WordPress core, themes, or other plugins.
 
-= Is this plugin beginner-friendly? =  
-Yes. The plugin provides a guided interface designed for non-technical users.
+= How does the login protection work? =
+The plugin monitors failed login attempts and temporarily locks access when suspicious activity is detected.
 
-= Does this plugin slow down my website? =  
-The plugin is lightweight and designed to have minimal impact on performance.
+= What happens when an IP is blocked? =
+A professional security lockdown screen is displayed, informing the visitor that access has been temporarily restricted for security reasons.
 
-= Is technical support available? =  
+= Is this plugin beginner-friendly? =
+Yes. Cyber Smart Defence is designed for both beginners and professionals, with a simple guided interface.
+
+= Does this plugin slow down my website? =
+No. The plugin is optimized for performance and runs only when needed.
+
+= Is support available? =
 Yes. Support resources and contact options are available directly from the plugin interface.
 
 == Screenshots ==
@@ -58,17 +64,28 @@ Yes. Support resources and contact options are available directly from the plugi
 1. Cyber Smart Defence dashboard overview
 2. Security status indicator
 3. One-click setup interface
-4. Dashboard news & updates widget
+4. Login protection and lockdown screen
 
 == Changelog ==
 
+= 3.1.2 =
+* Minor fixes and compatibility improvements
+
+= 2.3 =
+* Added intelligent login lockout system
+* Added IP-based threat logging
+* Improved overall security response handling
+* UI and performance improvements
+
 = 2.2 =
-* Added dashboard news & updates widget
 * Improved admin interface and status indicators
 * Updated compatibility with latest WordPress version
 * General stability improvements
 
 == Upgrade Notice ==
 
-= 2.2 =
-This update adds dashboard updates and improves compatibility with newer WordPress versions.
+= 3.1.2 =
+WordPress compatibility and includes minor fixes.
+
+= 2.3 =
+This update introduces automatic login attack protection, a branded security lockdown screen, and enhanced threat monitoring powered by Cyber Smart Empire.

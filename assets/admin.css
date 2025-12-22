@@ -1,0 +1,220 @@
+/* ------------------------------
+   General Wrap & Layout
+------------------------------- */
+.csd-wrap {
+    max-width: 1000px;
+    margin: 0 auto;
+    font-family: "Segoe UI", Roboto, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #111;
+}
+
+.csd-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.csd-badge {
+    background: linear-gradient(135deg, #00e5ff, #007bff);
+    color: #fff;
+    padding: 6px 16px;
+    border-radius: 24px;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+/* ------------------------------
+   Cards
+------------------------------- */
+.csd-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    margin-top: 20px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease;
+}
+
+.csd-card:hover {
+    transform: translateY(-2px);
+}
+
+/* ------------------------------
+   Toggle & Status
+------------------------------- */
+.csd-toggle {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+    font-weight: 600;
+}
+
+.csd-toggle span {
+    width: 44px;
+    height: 24px;
+    background: #ccc;
+    border-radius: 12px;
+    margin-right: 12px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.csd-toggle span::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    top: 2px;
+    left: 2px;
+    transition: all 0.3s;
+}
+
+.csd-toggle.on span {
+    background: #0a7d00;
+}
+
+.csd-toggle.on span::before {
+    left: 22px;
+}
+
+.csd-status.on { color: #0a7d00; font-weight: 600; }
+.csd-status.off { color: #b32d2e; font-weight: 600; }
+
+/* ------------------------------
+   Buttons
+------------------------------- */
+.csd-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #00e5ff, #007bff);
+    color: #fff;
+    padding: 10px 22px;
+    font-size: 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.csd-btn:hover {
+    background: linear-gradient(135deg, #007bff, #00e5ff);
+    transform: translateY(-2px);
+}
+
+.csd-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ------------------------------
+   Loader Bar
+------------------------------- */
+.csd-loader {
+    display: none;
+    margin-top: 15px;
+}
+
+.csd-loader .csd-bar-bg {
+    background: #e5e5e5;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.csd-loader .csd-bar-fill {
+    width: 0%;
+    height: 8px;
+    background: linear-gradient(90deg, #00e5ff, #007bff);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+/* ------------------------------
+   Threat Logs Table
+------------------------------- */
+.csd-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.csd-table th, .csd-table td {
+    text-align: left;
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.95rem;
+}
+
+.csd-table th {
+    background: #f4f6f8;
+    font-weight: 600;
+}
+
+.csd-table tr:hover {
+    background: #f0f8ff;
+}
+
+/* ------------------------------
+   News Feed
+------------------------------- */
+.csd-news-list {
+    list-style: none;
+    padding-left: 0;
+    margin-top: 15px;
+}
+
+.csd-news-list li {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.csd-news-list li a {
+    text-decoration: none;
+    color: #007bff;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.csd-news-list li a:hover {
+    color: #00e5ff;
+}
+
+.csd-news-list small {
+    color: #666;
+}
+
+/* ------------------------------
+   Contact Section
+------------------------------- */
+.csd-contact ul {
+    list-style: disc;
+    padding-left: 20px;
+}
+
+.csd-contact li {
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.csd-contact a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.csd-contact a:hover {
+    color: #00e5ff;
+}
+
+/* ------------------------------
+   Responsive
+------------------------------- */
+@media (max-width: 768px) {
+    .csd-wrap { padding: 0 15px; }
+    .csd-header { flex-direction: column; gap: 10px; }
+}
