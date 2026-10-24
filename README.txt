@@ -1,96 +1,81 @@
-=== Cyber Smart Defence ===
-Contributors: cybersmartempire
-Tags: security, login protection, firewall, website protection
-Requires at least: 5.5
-Tested up to: 6.9
-Requires PHP: 7.2
-Stable tag: 3.1.3
-License: GPLv3
-License URI: https://www.gnu.org/licenses/gpl-3.0.html
+<?php
+if ( ! defined( 'ABSPATH' ) ) exit;
 
-Lightweight WordPress security firewall with login protection, threat monitoring, powered by Cyber Smart Empire.
+require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-== Description ==
+/**
+ * Handle login failures and lockout.
+ */
+add_action( 'wp_login_failed', 'csd_login_fail' );
 
-Cyber Smart Defence is a lightweight yet powerful WordPress security plugin designed to protect your website against unauthorized access and brute-force login attacks.
+function csd_login_fail() {
+    if ( ! csd_is_protection_enabled() ) {
+        return;
+    }
 
-The plugin integrates directly into the WordPress admin dashboard and works quietly in the background to monitor login activity, automatically block suspicious behavior, and display a professional security status.
+    $settings = csd_get_settings();
+    $threshold = max( 1, absint( $settings['lockout_threshold'] ) );
 
-When an attack occurs, Cyber Smart Defence temporarily restricts access:
+    $ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+    if ( empty( $ip ) ) return;
 
-No complex configuration is required.
+    $key = 'csd_fail_' . md5( $ip );
+    $fails = (int) get_transient( $key );
+    $fails++;
+    set_transient( $key, $fails, 15 * MINUTE_IN_SECONDS );
 
-== Features ==
+    if ( $fails >= $threshold ) {
+        $lockout_minutes = max( 1, absint( $settings['lockout_duration_minutes'] ) );
+        set_transient( 'csd_block_' . md5( $ip ), 1, $lockout_minutes * MINUTE_IN_SECONDS );
 
-* Intelligent login attempt monitoring
-* Automatic temporary lockout after multiple failed login attempts
-* IP-based threat detection and response
-* Secure threat logging system
-* Admin notices when protection is active or inactive
-* Lightweight and performance-friendly
+        global $wpdb;
+        $table  = $wpdb->prefix . 'csd_threat_logs';
+        $charset_collate = $wpdb->get_charset_collate();
 
-== Installation ==
+        if ( ! get_transient( 'csd_table_created' ) ) {
+            // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
+            $sql = "CREATE TABLE `$table` (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                ip VARCHAR(45) NOT NULL,
+                type VARCHAR(100) NOT NULL,
+                action_taken VARCHAR(255) NOT NULL
+            ) $charset_collate;";
+            dbDelta( $sql );
+            set_transient( 'csd_table_created', 1, 12 * HOUR_IN_SECONDS );
+            // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery
+        }
 
-1. Upload or activate the Cyber Smart Defence plugin.
-2. Open Cyber Defence from the WordPress admin menu.
-3. Follow the guided on-screen setup to enable protection.
-4. Once enabled, your site is automatically monitored and protected.
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
+        $wpdb->insert(
+            $table,
+            [
+                'ip'           => $ip,
+                'type'         => 'Login Lockout',
+                'action_taken' => 'Too many failed login attempts'
+            ],
+            ['%s', '%s', '%s']
+        );
+        // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery
+    }
+}
 
-No manual configuration is required.
+/**
+ * Block IP if currently locked out.
+ */
+add_action( 'login_init', function () {
+    if ( ! csd_is_protection_enabled() ) {
+        return;
+    }
 
-== Frequently Asked Questions ==
+    $ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+    if ( empty( $ip ) ) return;
 
-= Does this plugin modify WordPress core files? =
-No. Cyber Smart Defence does not modify WordPress core, themes, or other plugins.
-
-= How does the login protection work? =
-The plugin monitors failed login attempts and temporarily locks access when suspicious activity is detected.
-
-= What happens when an IP is blocked? =
-A professional security lockdown screen is displayed, informing the visitor that access has been temporarily restricted for security reasons.
-
-= Is this plugin beginner-friendly? =
-Yes. Cyber Smart Defence is designed for both beginners and professionals, with a simple guided interface.
-
-= Does this plugin slow down my website? =
-No. The plugin is optimized for performance and runs only when needed.
-
-= Is support available? =
-Yes. Support resources and contact options are available directly from the plugin interface.
-
-== Screenshots ==
-
-1. Cyber Smart Defence dashboard overview
-2. Security status indicator
-3. One-click setup interface
-4. Login protection and lockdown screen
-
-== Changelog ==
-
-= 3.1.3 =
-* Release update with compatibility improvements and minor security fixes
-
-= 3.1.2 =
-* Minor fixes and compatibility improvements
-
-= 2.3 =
-* Added intelligent login lockout system
-* Added IP-based threat logging
-* Improved overall security response handling
-* UI and performance improvements
-
-= 2.2 =
-* Improved admin interface and status indicators
-* Updated compatibility with latest WordPress version
-* General stability improvements
-
-== Upgrade Notice ==
-
-= 3.1.3 =
-This update includes compatibility improvements and the latest minor fixes for the plugin.
-
-= 3.1.2 =
-WordPress compatibility and includes minor fixes.
-
-= 2.3 =
-This update introduces automatic login attack protection, a branded security lockdown screen, and enhanced threat monitoring powered by Cyber Smart Empire.
+    if ( get_transient( 'csd_block_' . md5( $ip ) ) ) {
+        wp_die(
+            '<h1>' . esc_html__( 'Access Temporarily Locked', 'cyber-smart-defence' ) . '</h1>
+            <p>' . esc_html__( 'Too many failed login attempts.', 'cyber-smart-defence' ) . '</p>',
+            esc_html__( 'Cyber Smart Defence', 'cyber-smart-defence' )
+        );
+    }
+});

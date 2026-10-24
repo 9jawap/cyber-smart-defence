@@ -1,77 +1,79 @@
-<?php
-/**
- * Plugin Name: Cyber Smart Defence
- * Plugin URI: https://cybersmartempire.com/cyberdefence/
- * Description: Lightweight WordPress security firewall with login protection, and threat monitoring.
- * Version: 3.1.3
- * Author: Cyber Smart Empire
- * License: GPLv3
- * Text Domain: cyber-smart-defence
- */
+# Cyber Smart Defence
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+**Contributors:** cybersmartempire  
+**Official Website:** [https://cybersmartempire.com/cyberdefence](https://cybersmartempire.com/cyberdefence)  
+**Tags:** security, firewall, malware protection, brute-force protection, cyber defence, website security  
+**Requires at least:** 5.5  
+**Tested up to:** 6.9  
+**Stable tag:** 3.2.0  
+**Requires PHP:** 7.2  
+**License:** GPLv3  
+**License URI:** [https://www.gnu.org/licenses/gpl-3.0.html](https://www.gnu.org/licenses/gpl-3.0.html)  
 
-define( 'CSD_PATH', plugin_dir_path( __FILE__ ) );
-define( 'CSD_URL', plugin_dir_url( __FILE__ ) );
+Cyber Smart Defence securely integrates your external `/security/` firewall engine directly into your WordPress website for real-time protection, live monitoring, and centralized defense controls.
 
-// Core includes
-require_once CSD_PATH . 'includes/firewall.php';
-require_once CSD_PATH . 'includes/login-protection.php';
-require_once CSD_PATH . 'includes/admin-page.php';
+---
 
-// Optional API client
-require_once CSD_PATH . 'includes/api-client.php';
+## Description
 
-// Enqueue admin scripts & styles
-add_action( 'admin_enqueue_scripts', function() {
-    wp_enqueue_style( 'csd-admin', CSD_URL . 'assets/admin.css', [], '3.1.3' );
-    wp_enqueue_script( 'csd-admin', CSD_URL . 'assets/admin.js', ['jquery'], '3.1.3', true );
-});
+Cyber Smart Defence is a lightweight WordPress bridge plugin that connects your WordPress site to the Cyber Smart Empire external firewall engine located in the `/security/` folder of your server.
 
-// Run firewall early
-add_action( 'init', 'csd_run_firewall', 0 );
+Once installed, the plugin automatically:
+- Detects your firewall engine
+- Activates protection in real time
+- Displays live protection status in your dashboard
+- Provides direct access to your Cyber Defence Panel
+- Allows configuration of lockout thresholds and protection controls
+- Tracks suspicious events and blocked activity
 
-// Activation redirect (fixed)
-register_activation_hook( __FILE__, function() {
-    update_option( 'csd_do_activation_redirect', true );
-});
+This plugin does **NOT** slow down your website and runs independently from WordPress core, making it extremely secure even if WordPress is compromised.
 
-// Redirect after menu is added
-add_action( 'admin_menu', function() {
-    // Add the plugin menu first
-    add_menu_page(
-        'Cyber Defence',
-        'Cyber Defence',
-        'manage_options',
-        'cyber-smart-defence',
-        'csd_admin_page',
-        'dashicons-shield-alt',
-        80
-    );
+---
 
-    // Now do the redirect safely
-    if ( get_option( 'csd_do_activation_redirect' ) ) {
-        delete_option( 'csd_do_activation_redirect' );
-        if ( current_user_can( 'manage_options' ) ) {
-            wp_safe_redirect( admin_url( 'admin.php?page=cyber-smart-defence' ) );
-            exit;
-        }
-    }
-});
+## Key Features
 
-// Optional: Admin notices for activation & status
-add_action( 'admin_notices', function() {
-    if ( ! current_user_can( 'manage_options' ) ) return;
+- ✅ Auto-detects `/security/` folder
+- ✅ Auto-activates firewall protection
+- ✅ Configurable failed-login lockout threshold
+- ✅ Customizable lockout duration
+- ✅ Suspicious user-agent filtering
+- ✅ Threat log visibility inside WordPress
+- ✅ Centralized protection settings
+- ✅ Zero performance impact
+- ✅ Works on shared hosting, VPS & dedicated servers
 
-    $ready = function_exists( 'csd_run_firewall' );
+---
 
-    if ( $ready ) {
-        echo '<div class="notice notice-success is-dismissible">
-            <p><strong>🛡 Cyber Smart Defence is active.</strong> Your website is protected in real time.</p>
-        </div>';
-    } else {
-        echo '<div class="notice notice-warning">
-            <p><strong>⚠ Cyber Smart Defence is not fully activated.</strong> Activate protection from the plugin page.</p>
-        </div>';
-    }
-});
+## Installation
+
+1. Install and activate the Cyber Smart Defence plugin.
+2. Open the Cyber Defence dashboard from the WordPress admin menu.
+3. Adjust the protection settings to fit your environment.
+4. Reload your WordPress dashboard to confirm live monitoring is active.
+
+---
+
+## Frequently Asked Questions
+
+### Do I need the /security/ folder?
+
+Yes. The plugin requires the external Cyber Smart Empire firewall engine located in `/security/` to provide full protection.
+
+### Can I configure the lockout settings?
+
+Yes. The 3.2.0 dashboard includes configurable lockout thresholds, lockout durations, and suspicious traffic filtering.
+
+### Is this free?
+
+Yes. The plugin and the security engine are free. Professional installation and support are optional services.
+
+---
+
+## Changelog
+
+### 3.2.0
+- Added centralized protection settings panel
+- Added configurable failed-login threshold and lockout duration
+- Added suspicious user-agent filtering controls
+- Improved threat reporting inside the admin dashboard
+- Minor bug fixes and compatibility improvements

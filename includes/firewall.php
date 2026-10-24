@@ -1,99 +1,253 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-
 /**
- * Run firewall checks on every frontend request
+ * Safe settings helpers.
  */
-function csd_run_firewall() {
-    if ( is_admin() ) return;
-
-    // Sanitize inputs
-    $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-    $query       = isset( $_SERVER['QUERY_STRING'] ) ? sanitize_text_field( wp_unslash( $_SERVER['QUERY_STRING'] ) ) : '';
-    $user_agent  = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
-    $ip          = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
-
-    $payload = strtolower( $request_uri . ' ' . $query );
-
-    // Basic malicious patterns
-    $rules = [
-        'union select',
-        'base64_decode',
-        '<script',
-        '../',
-        'eval(',
-        'information_schema',
-        'load_file',
-        'benchmark(',
-        'sleep('
+function csd_get_settings() {
+    $defaults = [
+        'enabled' => true,
+        'lockout_threshold' => 5,
+        'lockout_duration_minutes' => 30,
+        'block_suspicious_agents' => true,
+        'log_limit' => 20,
     ];
 
-    foreach ( $rules as $rule ) {
-        if ( strpos( $payload, strtolower( $rule ) ) !== false ) {
-            csd_block_request( 'Malicious pattern detected', $ip );
-        }
+    $saved = get_option( 'csd_settings', [] );
+    if ( ! is_array( $saved ) ) {
+        $saved = [];
     }
 
-    // Block suspicious user agents
-    if ( empty( $user_agent ) || strlen( $user_agent ) < 4 ) {
-        csd_block_request( 'Suspicious user agent', $ip );
-    }
+    $settings = array_merge( $defaults, $saved );
+    $settings['enabled'] = ! empty( $settings['enabled'] );
+    $settings['block_suspicious_agents'] = ! empty( $settings['block_suspicious_agents'] );
+    $settings['lockout_threshold'] = max( 1, absint( $settings['lockout_threshold'] ) );
+    $settings['lockout_duration_minutes'] = max( 1, absint( $settings['lockout_duration_minutes'] ) );
+    $settings['log_limit'] = max( 5, absint( $settings['log_limit'] ) );
+
+    return $settings;
+}
+
+function csd_is_protection_enabled() {
+    return csd_get_settings()['enabled'];
 }
 
 /**
- * Block requests and log threats
+ * Admin page
  */
-function csd_block_request( $reason, $ip ) {
+function csd_admin_page() {
     global $wpdb;
 
-    // Internal plugin table, safe to use
-    $table  = $wpdb->prefix . 'csd_threat_logs';
-    $charset_collate = $wpdb->get_charset_collate();
+    if ( isset( $_POST['csd_save_settings'] ) ) {
+        check_admin_referer( 'csd_save_settings', 'csd_settings_nonce' );
 
-    // Create threat logs table safely (once every 12 hours)
-    if ( ! get_transient( 'csd_table_created' ) ) {
+        $settings = csd_get_settings();
+        $settings['enabled'] = ! empty( $_POST['csd_enabled'] );
+        $settings['block_suspicious_agents'] = ! empty( $_POST['csd_block_suspicious_agents'] );
+        $settings['lockout_threshold'] = max( 1, absint( $_POST['csd_lockout_threshold'] ?? $settings['lockout_threshold'] ) );
+        $settings['lockout_duration_minutes'] = max( 1, absint( $_POST['csd_lockout_duration_minutes'] ?? $settings['lockout_duration_minutes'] ) );
+        $settings['log_limit'] = max( 5, absint( $_POST['csd_log_limit'] ?? $settings['log_limit'] ) );
 
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
-        $sql = "CREATE TABLE $table (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            ip VARCHAR(45) NOT NULL,
-            type VARCHAR(100) NOT NULL,
-            action_taken VARCHAR(255) NOT NULL
-        ) $charset_collate;";
-        dbDelta( $sql );
-        set_transient( 'csd_table_created', 1, 12 * HOUR_IN_SECONDS );
-        // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery
+        update_option( 'csd_settings', $settings );
+        echo '<div class="notice notice-success is-dismissible"><p><strong>Cyber Smart Defence:</strong> Settings saved successfully.</p></div>';
     }
 
-    // Insert threat log safely
-    // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
-    $inserted = $wpdb->insert(
-        $table,
-        [
-            'ip'           => $ip,
-            'type'         => 'Firewall Block',
-            'action_taken' => $reason
-        ],
-        ['%s','%s','%s']
+    $settings = csd_get_settings();
+    $total_logs = (int) $wpdb->get_var(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}csd_threat_logs"
     );
-    // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery
+    $blocked_ips = (int) $wpdb->get_var(
+        "SELECT COUNT(DISTINCT ip) FROM {$wpdb->prefix}csd_threat_logs WHERE type IN ('Login Lockout', 'Firewall Block')"
+    );
+    ?>
+    <div class="wrap csd-wrap">
+        <h1>🛡 Cyber Smart Defence</h1>
 
-    // Cache inserted row
-    if ( $inserted ) {
-        wp_cache_set( $wpdb->insert_id, [
-            'ip'           => $ip,
-            'type'         => 'Firewall Block',
-            'action_taken' => $reason
-        ], 'csd_threat_logs' );
-    }
+        <div class="csd-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin:20px 0;">
+            <div class="csd-card" style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.04);">
+                <h2 style="margin-top:0;">Protection</h2>
+                <p><strong>Status:</strong> <?php echo $settings['enabled'] ? '<span style="color:#0a8f3d;">Enabled</span>' : '<span style="color:#d63638;">Disabled</span>'; ?></p>
+                <p><strong>Threats logged:</strong> <?php echo esc_html( $total_logs ); ?></p>
+            </div>
 
-    // Block access immediately
-    status_header( 403 );
-    exit( esc_html__( 'Access denied.', 'cyber-smart-defence' ) );
+            <div class="csd-card" style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.04);">
+                <h2 style="margin-top:0;">Security Rule</h2>
+                <p><strong>Lockout threshold:</strong> <?php echo esc_html( $settings['lockout_threshold'] ); ?> failed attempts</p>
+                <p><strong>Lockout duration:</strong> <?php echo esc_html( $settings['lockout_duration_minutes'] ); ?> minutes</p>
+            </div>
+
+            <div class="csd-card" style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.04);">
+                <h2 style="margin-top:0;">Visibility</h2>
+                <p><strong>Blocked IPs:</strong> <?php echo esc_html( $blocked_ips ); ?></p>
+                <p><strong>Log window:</strong> <?php echo esc_html( $settings['log_limit'] ); ?> recent events</p>
+            </div>
+        </div>
+
+        <div class="csd-card" style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:20px;">
+            <h2>⚙️ Protection Settings</h2>
+            <form method="post" action="<?php echo esc_url( admin_url( 'admin.php?page=cyber-smart-defence' ) ); ?>">
+                <?php wp_nonce_field( 'csd_save_settings', 'csd_settings_nonce' ); ?>
+                <table class="form-table" role="presentation">
+                    <tbody>
+                        <tr>
+                            <th scope="row"><label for="csd_enabled">Enable protection</label></th>
+                            <td>
+                                <input type="checkbox" id="csd_enabled" name="csd_enabled" value="1" <?php checked( $settings['enabled'], true ); ?> />
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="csd_lockout_threshold">Failed login threshold</label></th>
+                            <td>
+                                <input type="number" id="csd_lockout_threshold" name="csd_lockout_threshold" min="1" max="50" value="<?php echo esc_attr( $settings['lockout_threshold'] ); ?>" class="small-text" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="csd_lockout_duration_minutes">Lockout duration (minutes)</label></th>
+                            <td>
+                                <input type="number" id="csd_lockout_duration_minutes" name="csd_lockout_duration_minutes" min="1" max="1440" value="<?php echo esc_attr( $settings['lockout_duration_minutes'] ); ?>" class="small-text" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="csd_block_suspicious_agents">Block suspicious user agents</label></th>
+                            <td>
+                                <input type="checkbox" id="csd_block_suspicious_agents" name="csd_block_suspicious_agents" value="1" <?php checked( $settings['block_suspicious_agents'], true ); ?> />
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><label for="csd_log_limit">Recent log entries</label></th>
+                            <td>
+                                <input type="number" id="csd_log_limit" name="csd_log_limit" min="5" max="100" value="<?php echo esc_attr( $settings['log_limit'] ); ?>" class="small-text" />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="submit">
+                    <button type="submit" name="csd_save_settings" value="1" class="button button-primary">Save settings</button>
+                </p>
+            </form>
+        </div>
+
+        <div class="csd-card" style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:20px;">
+            <h2>
+                Engine:
+                <span class="csd-status on">● Advanced Protection</span>
+            </h2>
+
+            <p>
+                Cyber Smart Defence manages real-time threat protection, failed-login defenses, and suspicious traffic filtering from a centralized configuration panel.
+            </p>
+
+            <a href="https://cybersmartempire.com/cyberdefence/"
+               target="_blank"
+               rel="noopener"
+               class="button button-primary button-hero">
+                🚀 Upgrade to Full Protection
+            </a>
+        </div>
+
+        <div class="csd-card" style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-bottom:20px;">
+            <h2>🚨 Threat Logs</h2>
+            <p class="description">Recent security activity detected by Cyber Defence</p>
+            <?php csd_render_threat_logs(); ?>
+        </div>
+
+        <div class="csd-card" style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.04);">
+            <h2>📢 Cyber Smart Empire</h2>
+            <p>Learn actionable cyber defense strategies from our bestselling guides!</p>
+
+            <div style="max-width:420px;">
+                <img
+                    src="<?php echo esc_url( plugins_url( '../assets/cover.gif', __FILE__ ) ); ?>"
+                    alt="Cyber Smart Empire"
+                    style="width:100%;height:auto;border-radius:6px;border:1px solid #ddd;"
+                >
+            </div>
+
+            <p style="margin-top:10px;">
+                <a href="https://cybersmartempire.com" target="_blank" rel="noopener" class="button button-primary">
+                    🚀 Visit Cyber Smart Empire
+                </a>
+            </p>
+        </div>
+
+        <div class="csd-card" style="background:#fff;border:1px solid #ddd;border-radius:8px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.04);margin-top:20px;">
+            <h2>📞 Support & Docs</h2>
+            <p>
+                <a href="https://cybersmartempire.com/consultation/" target="_blank" rel="noopener">Contact Support</a><br>
+                <a href="https://cybersmartempire.com/docs/" target="_blank" rel="noopener">View Documentation</a>
+            </p>
+        </div>
+    </div>
+    <?php
 }
 
-// Hook firewall into WordPress
-add_action( 'init', 'csd_run_firewall' );
+/**
+ * Render Threat Logs
+ */
+function csd_render_threat_logs() {
+    global $wpdb;
+
+    $settings = csd_get_settings();
+    $limit = max( 5, absint( $settings['log_limit'] ) );
+    $cache_key = 'csd_threat_logs_' . $limit;
+    $logs = wp_cache_get( $cache_key, 'cyber-smart-defence' );
+
+    if ( false === $logs ) {
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+        $logs = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT id, created_at, ip, type, action_taken
+                 FROM {$wpdb->prefix}csd_threat_logs
+                 ORDER BY created_at DESC
+                 LIMIT %d",
+                $limit
+            )
+        );
+
+        wp_cache_set( $cache_key, $logs, 'cyber-smart-defence', 5 * MINUTE_IN_SECONDS );
+    }
+
+    if ( empty( $logs ) ) {
+        echo '<p>No threat events logged yet.</p>';
+        return;
+    }
+
+    echo '<div class="csd-log-wrapper">';
+
+    foreach ( $logs as $log ) {
+        echo '<div class="csd-log-item">';
+        echo '<button type="button" class="csd-log-toggle">
+                <span>' . esc_html( $log->ip ) . '</span>
+                <span>Tap to view</span>
+              </button>';
+
+        echo '<div class="csd-log-details">';
+        echo '<p><strong>Date:</strong> ' . esc_html( $log->created_at ) . '</p>';
+        echo '<p><strong>Threat:</strong> ' . esc_html( $log->type ) . '</p>';
+        echo '<p><strong>Action:</strong> ' . esc_html( $log->action_taken ) . '</p>';
+        echo '<a class="button" target="_blank" href="https://ipinfo.io/' . esc_attr( $log->ip ) . '">🔎 Trace IP</a>';
+        echo '</div></div>';
+    }
+
+    echo '</div>';
+    ?>
+    <style>
+        .csd-log-wrapper{display:flex;flex-direction:column;gap:10px}
+        .csd-log-item{border:1px solid #ddd;border-radius:6px;overflow:hidden}
+        .csd-log-toggle{width:100%;padding:10px;background:#f5f5f5;border:none;font-weight:bold;cursor:pointer}
+        .csd-log-details{display:none;padding:10px}
+        @media(min-width:768px){
+            .csd-log-toggle{display:none}
+            .csd-log-details{display:block!important}
+        }
+    </style>
+
+    <script>
+    jQuery(function($){
+        $('.csd-log-toggle').on('click', function(){
+            $(this).next('.csd-log-details').slideToggle();
+        });
+    });
+    </script>
+    <?php
+}
