@@ -3,7 +3,7 @@
  * Plugin Name: Cyber Smart Defence
  * Plugin URI: https://cybersmartempire.com/cyberdefence/
  * Description: Lightweight WordPress security firewall with login protection, and threat monitoring.
- * Version: 3.1.2
+ * Version: 3.1.3
  * Author: Cyber Smart Empire
  * License: GPLv3
  * Text Domain: cyber-smart-defence
@@ -24,8 +24,8 @@ require_once CSD_PATH . 'includes/api-client.php';
 
 // Enqueue admin scripts & styles
 add_action( 'admin_enqueue_scripts', function() {
-    wp_enqueue_style( 'csd-admin', CSD_URL . 'assets/admin.css', [], '3.1.2' );
-    wp_enqueue_script( 'csd-admin', CSD_URL . 'assets/admin.js', ['jquery'], '3.1.2', true );
+    wp_enqueue_style( 'csd-admin', CSD_URL . 'assets/admin.css', [], '3.1.3' );
+    wp_enqueue_script( 'csd-admin', CSD_URL . 'assets/admin.js', ['jquery'], '3.1.3', true );
 });
 
 // Run firewall early

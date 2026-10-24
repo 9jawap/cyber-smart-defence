@@ -4,7 +4,7 @@ Tags: security, login protection, firewall, website protection
 Requires at least: 5.5
 Tested up to: 6.9
 Requires PHP: 7.2
-Stable tag: 3.1.2
+Stable tag: 3.1.3
 License: GPLv3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -14,10 +14,9 @@ Lightweight WordPress security firewall with login protection, threat monitoring
 
 Cyber Smart Defence is a lightweight yet powerful WordPress security plugin designed to protect your website against unauthorized access and brute-force login attacks.
 
-The plugin integrates directly into the WordPress admin dashboard and works quietly in the background to monitor login activity, automatically block suspicious behavior, and display a professional lockdown screen when threats are detected.
+The plugin integrates directly into the WordPress admin dashboard and works quietly in the background to monitor login activity, automatically block suspicious behavior, and display a professional security status.
 
 When an attack occurs, Cyber Smart Defence temporarily restricts access:
-
 
 No complex configuration is required.
 
@@ -68,6 +67,9 @@ Yes. Support resources and contact options are available directly from the plugi
 
 == Changelog ==
 
+= 3.1.3 =
+* Release update with compatibility improvements and minor security fixes
+
 = 3.1.2 =
 * Minor fixes and compatibility improvements
 
@@ -83,6 +85,9 @@ Yes. Support resources and contact options are available directly from the plugi
 * General stability improvements
 
 == Upgrade Notice ==
+
+= 3.1.3 =
+This update includes compatibility improvements and the latest minor fixes for the plugin.
 
 = 3.1.2 =
 WordPress compatibility and includes minor fixes.

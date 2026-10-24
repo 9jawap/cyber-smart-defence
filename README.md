@@ -5,7 +5,7 @@
 **Tags:** security, firewall, malware protection, brute-force protection, cyber defence, website security  
 **Requires at least:** 5.5  
 **Tested up to:** 6.9  
-**Stable tag:** 1.6  
+**Stable tag:** 3.1.3  
 **Requires PHP:** 7.2  
 **License:** GPLv3  
 **License URI:** [https://www.gnu.org/licenses/gpl-3.0.html](https://www.gnu.org/licenses/gpl-3.0.html)  
